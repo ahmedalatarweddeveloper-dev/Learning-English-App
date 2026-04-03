@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Name - المنصة التعليمية</title>
+    <style>
+        :root {
+            --main-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* الهيدر */
+        header {
+            background-color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            width: 80px; /* يمكنك تعديل المقاس */
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            margin: 0;
+            color: var(--main-color);
+            font-size: 1.8rem;
+        }
+
+        /* الجسم الرئيسي */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .welcome-msg {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .levels-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .level-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            background-color: white;
+            color: var(--main-color);
+            text-decoration: none;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .level-link:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        /* الفوتر */
+        footer {
+            background-color: var(--main-color);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9rem;
+        }
+
+        @media (min-width: 768px) {
+            .levels-container {
+                max-width: 800px;
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="img/logo.jpg" alt="Project Logo" class="logo">
+        <h1>Project Name</h1>
+    </header>
+
+    <main>
+        <div class="welcome-msg">
+            <h2>مرحباً بك في رحلة التعلم</h2>
+            <p>اختر المستوى لبدء الألعاب التعليمية</p>
+        </div>
+
+        <div class="levels-container">
+            <a href="three-level-page/frist-page.html" class="level-link">المستوى الأول 🌟</a>
+            <a href="three-level-page/secondly-page.html" class="level-link">المستوى الثاني ✨</a>
+            <a href="three-level-page/thirdly-page.html" class="level-link">المستوى الثالث 🏆</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>جميع حقوق النشر محفوظة تحت رعاية الباحث محمد خيري عبد الله &copy; 2026</p>
+    </footer>
+
+</body>
+</html>
