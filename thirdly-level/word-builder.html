@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Word Builder Game</title>
+    <style>
+        :root {
+            --primary: #009688;
+            --secondary: #ffc107;
+            --success: #2ecc71;
+            --bg: #e0f2f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+            user-select: none;
+        }
+
+        .main-title { color: #00695c; font-size: 1.6rem; margin: 15px 0; text-align: center; }
+
+        /* منطقة الصورة وزر النطق */
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .image-display {
+            font-size: 6rem;
+            background: white;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 25px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            border: 4px solid white;
+        }
+
+        .btn-speak {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        /* مربعات الكلمة (LTR) */
+        .word-slots {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .slot {
+            width: 55px;
+            height: 65px;
+            background: white;
+            border-bottom: 5px solid var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #333;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* بنك الحروف */
+        .letters-bank {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 450px;
+        }
+
+        .letter-btn {
+            width: 60px;
+            height: 60px;
+            background: var(--secondary);
+            color: #5d4037;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #ffa000;
+            transition: 0.1s;
+        }
+
+        .letter-btn:active { transform: translateY(4px); box-shadow: none; }
+        .letter-btn.used { opacity: 0; pointer-events: none; }
+
+        /* التحكم */
+        .controls { margin-top: 40px; display: flex; gap: 15px; }
+        
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-clear { background: #cfd8dc; color: #37474f; }
+        .btn-next { background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">Build the Word 🧩</h1>
+    
+    <div class="header-container">
+        <div class="image-display" id="picDisplay">🍎</div>
+        <button class="btn-speak" onclick="repeatSpeak()">
+            <span>🔊</span> Listen Again
+        </button>
+    </div>
+
+    <div class="word-slots" id="slotsRow"></div>
+
+    <div class="letters-bank" id="lettersRow"></div>
+
+    <div class="controls">
+        <button class="btn btn-clear" onclick="resetWord()">Clear ❌</button>
+        <button class="btn btn-next" onclick="initGame()">New Word 🔁</button>
+    </div>
+
+    <script>
+        const library = [
+            { word: 'Apple', img: '🍎' }, { word: 'Cat', img: '🐱' }, { word: 'Dog', img: '🐶' }, { word: 'Car', img: '🚗' },
+            { word: 'Boy', img: '👦' }, { word: 'Fish', img: '🐟' }, { word: 'Tree', img: '🌳' }, { word: 'Book', img: '📖' },
+            { word: 'Ball', img: '⚽' }, { word: 'House', img: '🏠' }, { word: 'Sun', img: '☀️' }, { word: 'Moon', img: '🌙' },
+            { word: 'Bird', img: '🐦' }, { word: 'Milk', img: '🥛' }, { word: 'Egg', img: '🥚' }, { word: 'Cake', img: '🍰' },
+            { word: 'Hand', img: '✋' }, { word: 'Eye', img: '👁️' }, { word: 'Foot', img: '🦶' }, { word: 'Nose', img: '👃' },
+            { word: 'Lion', img: '🦁' }, { word: 'Monkey', img: '🐒' }, { word: 'Rabbit', img: '🐰' }, { word: 'Bear', img: '🐻' },
+            { word: 'Banana', img: '🍌' }, { word: 'Orange', img: '🍊' }, { word: 'Grapes', img: '🍇' }, { word: 'Corn', img: '🌽' },
+            { word: 'Plane', img: '✈️' }, { word: 'Bike', img: '🚲' }, { word: 'Bus', img: '🚌' }, { word: 'Ship', img: '🚢' },
+            { word: 'Bed', img: '🛏️' }, { word: 'Chair', img: '🪑' }, { word: 'Door', img: '🚪' }, { word: 'Key', img: '🔑' },
+            { word: 'Pen', img: '🖊️' }, { word: 'Star', img: '⭐' }, { word: 'Flower', img: '🌸' }, { word: 'Water', img: '💧' }
+        ];
+
+        let currentWord = "";
+        let typedWord = "";
+
+        function initGame() {
+            const item = library[Math.floor(Math.random() * library.length)];
+            currentWord = item.word.toUpperCase();
+            typedWord = "";
+            
+            document.getElementById('picDisplay').innerHTML = item.img;
+            repeatSpeak(); // نطق أولي عند البداية
+
+            const slotsRow = document.getElementById('slotsRow');
+            slotsRow.innerHTML = '';
+            for(let i=0; i<currentWord.length; i++) {
+                let s = document.createElement('div');
+                s.className = 'slot';
+                s.id = 'slot-' + i;
+                slotsRow.appendChild(s);
+            }
+
+            const lettersRow = document.getElementById('lettersRow');
+            lettersRow.innerHTML = '';
+            let letters = currentWord.split('').sort(() => 0.5 - Math.random());
+            
+            letters.forEach((l) => {
+                let b = document.createElement('div');
+                b.className = 'letter-btn';
+                b.innerText = l;
+                b.onclick = () => fillLetter(l, b);
+                lettersRow.appendChild(b);
+            });
+        }
+
+        function fillLetter(char, btn) {
+            if (typedWord.length < currentWord.length) {
+                document.getElementById('slot-' + typedWord.length).innerText = char;
+                typedWord += char;
+                btn.classList.add('used');
+
+                if (typedWord.length === currentWord.length) {
+                    if (typedWord === currentWord) {
+                        setTimeout(() => {
+                            alert("Great Job! You built the word correctly 🌟");
+                            initGame();
+                        }, 300);
+                    } else {
+                        setTimeout(() => {
+                            alert("Try again! The order is not correct 🔄");
+                            resetWord();
+                        }, 300);
+                    }
+                }
+            }
+        }
+
+        function resetWord() {
+            typedWord = "";
+            document.querySelectorAll('.slot').forEach(s => s.innerText = '');
+            document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('used'));
+        }
+
+        function repeatSpeak() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(currentWord.toLowerCase());
+                msg.lang = 'en-US';
+                msg.rate = 0.7;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

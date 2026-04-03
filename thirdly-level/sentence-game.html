@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sentence Builder - 40 Levels</title>
+    <style>
+        :root {
+            --primary: #673ab7;
+            --secondary: #00bcd4;
+            --bg: #f3e5f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .main-title { color: #4527a0; font-size: 1.5rem; margin: 10px 0; }
+
+        .image-hint {
+            font-size: 5rem;
+            background: white;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            border: 4px solid var(--secondary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .sentence-slots {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            min-height: 65px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .word-slot {
+            min-width: 90px;
+            height: 55px;
+            background: rgba(255,255,255,0.6);
+            border: 2px dashed var(--primary);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+            padding: 0 15px;
+        }
+
+        .words-bank {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 500px;
+        }
+
+        .word-btn {
+            padding: 12px 22px;
+            background: white;
+            color: #333;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #ddd;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: 2px solid #eee;
+        }
+
+        .word-btn:active { transform: translateY(3px); box-shadow: none; }
+        .word-btn.used { opacity: 0.2; pointer-events: none; }
+
+        .btn-speak {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
+        }
+
+        .controls { margin-top: 40px; display: flex; gap: 15px; }
+        .btn { padding: 15px 35px; border-radius: 50px; border: none; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-next { background: var(--primary); color: white; }
+        .btn-clear { background: #cfd8dc; color: #37474f; }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">Build the Sentence 📝</h1>
+    
+    <div class="image-hint" id="imgHint">❓</div>
+    
+    <button class="btn-speak" onclick="speakSentence()">🔊 Listen</button>
+
+    <div class="sentence-slots" id="slotsArea"></div>
+
+    <div class="words-bank" id="wordsArea"></div>
+
+    <div class="controls">
+        <button class="btn btn-clear" onclick="clearSentence()">Clear ❌</button>
+        <button class="btn btn-next" onclick="initGame()">New Sentence 🔁</button>
+    </div>
+
+    <script>
+        const sentences = [
+            { full: "Eat the apple", words: ["Eat", "the", "apple"], img: "🍎" },
+            { full: "The cat sits", words: ["The", "cat", "sits"], img: "🐱" },
+            { full: "I love dog", words: ["I", "love", "dog"], img: "🐶" },
+            { full: "Drive the car", words: ["Drive", "the", "car"], img: "🚗" },
+            { full: "A happy boy", words: ["A", "happy", "boy"], img: "👦" },
+            { full: "Fish can swim", words: ["Fish", "can", "swim"], img: "🐟" },
+            { full: "Big green tree", words: ["Big", "green", "tree"], img: "🌳" },
+            { full: "Read a book", words: ["Read", "a", "book"], img: "📖" },
+            { full: "Play with ball", words: ["Play", "with", "ball"], img: "⚽" },
+            { full: "This is house", words: ["This", "is", "house"], img: "🏠" },
+            { full: "The sun shines", words: ["The", "sun", "shines"], img: "☀️" },
+            { full: "See the moon", words: ["See", "the", "moon"], img: "🌙" },
+            { full: "Bird can fly", words: ["Bird", "can", "fly"], img: "🐦" },
+            { full: "Drink the milk", words: ["Drink", "the", "milk"], img: "🥛" },
+            { full: "One white egg", words: ["One", "white", "egg"], img: "🥚" },
+            { full: "Eat sweet cake", words: ["Eat", "sweet", "cake"], img: "🍰" },
+            { full: "Raise your hand", words: ["Raise", "your", "hand"], img: "✋" },
+            { full: "Close your eye", words: ["Close", "your", "eye"], img: "👁️" },
+            { full: "Wash your foot", words: ["Wash", "your", "foot"], img: "🦶" },
+            { full: "Touch your nose", words: ["Touch", "your", "nose"], img: "👃" },
+            { full: "Lion is strong", words: ["Lion", "is", "strong"], img: "🦁" },
+            { full: "Monkey eats banana", words: ["Monkey", "eats", "banana"], img: "🐒" },
+            { full: "Fast white rabbit", words: ["Fast", "white", "rabbit"], img: "🐰" },
+            { full: "Brown big bear", words: ["Brown", "big", "bear"], img: "🐻" },
+            { full: "Yellow long banana", words: ["Yellow", "long", "banana"], img: "🍌" },
+            { full: "Juicy orange fruit", words: ["Juicy", "orange", "fruit"], img: "🍊" },
+            { full: "Sweet purple grapes", words: ["Sweet", "purple", "grapes"], img: "🍇" },
+            { full: "Yellow hot corn", words: ["Yellow", "hot", "corn"], img: "🌽" },
+            { full: "Fast big plane", words: ["Fast", "big", "plane"], img: "✈️" },
+            { full: "Ride the bike", words: ["Ride", "the", "bike"], img: "🚲" },
+            { full: "Yellow school bus", words: ["Yellow", "school", "bus"], img: "🚌" },
+            { full: "Large blue ship", words: ["Large", "blue", "ship"], img: "🚢" },
+            { full: "Sleep in bed", words: ["Sleep", "in", "bed"], img: "🛏️" },
+            { full: "Sit on chair", words: ["Sit", "on", "chair"], img: "🪑" },
+            { full: "Open the door", words: ["Open", "the", "door"], img: "🚪" },
+            { full: "Use the key", words: ["Use", "the", "key"], img: "🔑" },
+            { full: "Write with pen", words: ["Write", "with", "pen"], img: "🖊️" },
+            { full: "Bright night star", words: ["Bright", "night", "star"], img: "⭐" },
+            { full: "Beautiful pink flower", words: ["Beautiful", "pink", "flower"], img: "🌸" },
+            { full: "Drink fresh water", words: ["Drink", "fresh", "water"], img: "💧" }
+        ];
+
+        let currentObj = {};
+        let userOrder = [];
+
+        function initGame() {
+            currentObj = sentences[Math.floor(Math.random() * sentences.length)];
+            userOrder = [];
+            document.getElementById('imgHint').innerText = currentObj.img;
+            
+            const slotsArea = document.getElementById('slotsArea');
+            slotsArea.innerHTML = '';
+            currentObj.words.forEach(() => {
+                let s = document.createElement('div');
+                s.className = 'word-slot';
+                slotsArea.appendChild(s);
+            });
+
+            const wordsArea = document.getElementById('wordsArea');
+            wordsArea.innerHTML = '';
+            let shuffled = [...currentObj.words].sort(() => 0.5 - Math.random());
+            
+            shuffled.forEach(w => {
+                let b = document.createElement('div');
+                b.className = 'word-btn';
+                b.innerText = w;
+                b.onclick = () => addWord(w, b);
+                wordsArea.appendChild(b);
+            });
+            
+            speakSentence();
+        }
+
+        function addWord(word, btn) {
+            if (userOrder.length < currentObj.words.length) {
+                const slots = document.querySelectorAll('.word-slot');
+                slots[userOrder.length].innerText = word;
+                userOrder.push(word);
+                btn.classList.add('used');
+
+                if (userOrder.length === currentObj.words.length) {
+                    if (userOrder.join(' ') === currentObj.words.join(' ')) {
+                        setTimeout(() => {
+                            alert("Excellent Sentence! 🌟");
+                            initGame();
+                        }, 300);
+                    } else {
+                        setTimeout(() => {
+                            alert("Try again! The order is wrong 🔄");
+                            clearSentence();
+                        }, 300);
+                    }
+                }
+            }
+        }
+
+        function clearSentence() {
+            userOrder = [];
+            document.querySelectorAll('.word-slot').forEach(s => s.innerText = '');
+            document.querySelectorAll('.word-btn').forEach(b => b.classList.remove('used'));
+        }
+
+        function speakSentence() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(currentObj.full);
+                msg.lang = 'en-US';
+                msg.rate = 0.7;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
