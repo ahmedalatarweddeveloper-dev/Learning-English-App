@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>لعبة الساعة</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px 24px;
+  background: linear-gradient(160deg, #e8f4ff 0%, #fff8f0 100%);
+}
+h1 {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  color: #E05A00;
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 0 #FFE066;
+}
+.score-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.score-item {
+  background: white;
+  border-radius: 40px;
+  padding: 6px 16px;
+  font-size: clamp(0.9rem, 3vw, 1.05rem);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.score-item.c { color:#27ae60; border:3px solid #27ae60; }
+.score-item.w { color:#e74c3c; border:3px solid #e74c3c; }
+.score-item.t { color:#E05A00; border:3px solid #E05A00; }
+
+.game-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 460px;
+}
+.clock-wrap {
+  width: min(310px, 86vw);
+  height: min(310px, 86vw);
+}
+.clock-wrap svg { width:100%; height:100%; }
+
+/* letter nodes */
+.lnode circle { transition: fill .25s, stroke .25s; }
+.lnode text   { font-family:Arial,sans-serif; font-weight:700;
+                dominant-baseline:central; text-anchor:middle;
+                pointer-events:none; transition:fill .25s; }
+.lnode.active circle { fill:#E05A00 !important; stroke:white !important; stroke-width:3; }
+.lnode.active text   { fill:white !important; }
+
+#handGroup { transform-origin: 155px 155px; }
+
+.spin-btn {
+  background:#E05A00; color:white; border:none; border-radius:50px;
+  padding:13px 34px; font-family:Arial,sans-serif;
+  font-size:clamp(1rem,3.5vw,1.35rem); font-weight:700; cursor:pointer;
+  box-shadow:0 5px 0 #a03d00; transition:transform .12s, box-shadow .12s;
+  user-select:none;
+}
+.spin-btn:active  { transform:translateY(4px); box-shadow:0 1px 0 #a03d00; }
+.spin-btn:disabled{ background:#b0b0b0; box-shadow:0 5px 0 #888; cursor:not-allowed; }
+
+.question-box {
+  background:white; border-radius:20px; padding:14px 20px;
+  box-shadow:0 4px 16px rgba(0,0,0,.1); text-align:center;
+  width:100%; border:3px solid #4ECDC4;
+  min-height:72px; display:flex; align-items:center; justify-content:center;
+}
+.question-box p { font-size:clamp(1rem,3.5vw,1.35rem); color:#333; font-weight:600; }
+.big-letter {
+  font-size:clamp(2rem,9vw,3.2rem); font-weight:900; color:#E05A00;
+  display:block; line-height:1.1;
+}
+.choices {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%;
+}
+.choice-btn {
+  background:white; border:4px solid #A8DADC; border-radius:18px;
+  padding:clamp(12px,3.5vw,20px) 10px; font-family:Arial,sans-serif;
+  font-size:clamp(1.8rem,7vw,2.8rem); font-weight:900; color:#222;
+  cursor:pointer; box-shadow:0 4px 0 #6ab5b8;
+  transition:transform .15s, box-shadow .15s; user-select:none;
+}
+.choice-btn:hover:not(:disabled){ transform:translateY(-3px); box-shadow:0 7px 0 #6ab5b8; }
+.choice-btn:active:not(:disabled){ transform:translateY(2px); box-shadow:0 2px 0 #6ab5b8; }
+.choice-btn.ok { background:#27ae60; border-color:#1e8449; color:white; box-shadow:0 4px 0 #1a6e3a; animation:pop .35s; }
+.choice-btn.no { background:#e74c3c; border-color:#c0392b; color:white; box-shadow:0 4px 0 #a93226; animation:shk .35s; }
+.choice-btn:disabled { cursor:not-allowed; }
+@keyframes pop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+@keyframes shk { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+.toast {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.8);
+  background:white; border-radius:24px; padding:24px 40px; text-align:center;
+  box-shadow:0 16px 50px rgba(0,0,0,.2); z-index:200;
+  opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+}
+.toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+.toast-icon { font-size:3rem; display:block; }
+.toast-msg  { font-size:1.5rem; font-weight:800; margin-top:6px; }
+.toast-msg.ok { color:#27ae60; } .toast-msg.no { color:#e74c3c; }
+
+.cfp {
+  position:fixed; width:11px; height:11px; border-radius:3px;
+  pointer-events:none; z-index:300; animation:fall 1.2s forwards;
+}
+@keyframes fall { 0%{opacity:1;transform:translateY(-10px) rotate(0)} 100%{opacity:0;transform:translateY(100vh) rotate(720deg)} }
+
+.win-screen {
+  display:none; flex-direction:column; align-items:center; gap:16px;
+  text-align:center; background:white; border-radius:28px;
+  padding:36px 28px; box-shadow:0 8px 32px rgba(0,0,0,.12);
+  width:100%; max-width:400px;
+}
+.win-screen.show { display:flex; }
+.win-title { font-size:clamp(1.6rem,6vw,2.2rem); font-weight:900; color:#E05A00; }
+.win-sub   { font-size:clamp(1rem,3.5vw,1.2rem); color:#555; }
+.win-stars { font-size:2.5rem; letter-spacing:4px; }
+.restart-btn {
+  background:#4ECDC4; color:white; border:none; border-radius:50px;
+  padding:12px 36px; font-family:Arial,sans-serif;
+  font-size:clamp(1rem,3.5vw,1.2rem); font-weight:700; cursor:pointer;
+  box-shadow:0 5px 0 #38a8a0; transition:transform .12s, box-shadow .12s;
+}
+.restart-btn:active { transform:translateY(4px); box-shadow:0 1px 0 #38a8a0; }
+</style>
+</head>
+<body>
+
+<h1>🕐 لعبة الساعة</h1>
+
+<div class="score-bar">
+  <div class="score-item c">✅ <span id="sc">0</span></div>
+  <div class="score-item w">❌ <span id="sw">0</span></div>
+  <div class="score-item t">🎯 <span id="st">0</span>/10</div>
+</div>
+
+<div class="game-area" id="gameArea">
+
+  <div class="clock-wrap">
+    <!--
+      SVG coordinate system:
+      Center = (155,155)
+      Hand default position = pointing UP (12-o'clock).
+      We rotate the hand group clockwise by N degrees → it points to the
+      letter placed at N degrees clockwise from 12-o'clock.
+      Each letter i is placed at: angleDeg = i*(360/SLOTS) from 12-o'clock.
+      So rotating hand by angleDeg(i) makes it point EXACTLY at letter i.
+    -->
+    <svg id="clockSVG" viewBox="0 0 310 310" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="155" cy="155" r="149" fill="white" stroke="#E05A00" stroke-width="7"/>
+      <g id="lettersGroup"></g>
+      <!-- Hand: points UP by default (toward 12-o'clock = angle 0) -->
+      <g id="handGroup">
+        <line x1="155" y1="155" x2="155" y2="34"
+              stroke="#E05A00" stroke-width="7" stroke-linecap="round"/>
+        <polygon points="155,24 148,40 162,40" fill="#E05A00"/>
+      </g>
+      <circle cx="155" cy="155" r="10" fill="#E05A00"/>
+    </svg>
+  </div>
+
+  <button class="spin-btn" id="spinBtn" onclick="spinClock()">🔄 حرّك العقرب</button>
+
+  <div class="question-box" id="questionBox">
+    <p>اضغط على الزر لتحريك العقرب! 👆</p>
+  </div>
+
+  <div class="choices" id="choices" style="display:none"></div>
+</div>
+
+<div class="win-screen" id="winScreen">
+  <div style="font-size:3.5rem">🎉</div>
+  <div class="win-title">أحسنت يا بطل!</div>
+  <div class="win-sub" id="winSub"></div>
+  <div class="win-stars" id="winStars"></div>
+  <button class="restart-btn" onclick="restartGame()">🔄 العب تاني</button>
+</div>
+
+<div class="toast" id="toast">
+  <span class="toast-icon" id="tIcon"></span>
+  <div class="toast-msg"  id="tMsg"></div>
+</div>
+
+<script>
+/*
+  CORE LOGIC - No drift possible:
+  ─────────────────────────────────────────────────────────
+  • SLOTS = 12 letters placed evenly around clock.
+  • Letter at slot index i → placed at clockwise angle:
+        slotAngle(i) = i * (360 / SLOTS)   degrees from 12-o'clock
+  • SVG hand default = pointing UP (12-o'clock = 0°).
+  • Rotating #handGroup by X degrees (CSS transform rotate) →
+        hand points to X degrees clockwise from 12-o'clock.
+  • Therefore: rotating by slotAngle(i) → hand points EXACTLY at letter i.
+  • We pick a target slot, compute its exact angle, add full spins,
+    apply as cumulative rotation. Letter chosen = slotLetters[targetSlot].
+  • No reverse-mapping, no approximation. Perfect sync guaranteed.
+*/
+
+const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const SLOTS  = 12;
+const TOTAL  = 10;
+const CX = 155, CY = 155;
+const R  = 112;   // letter center radius from clock center (SVG units)
+const LR = 21;    // letter circle radius (SVG units)
+
+let slotLetters   = [];
+let currentLetter = '';
+let correctCount = 0, wrongCount = 0, round = 0;
+let spinning = false, answered = false;
+let cumAngle = 0;   // cumulative CSS rotation of hand (keeps growing, never mod)
+
+/* ── Speech ── */
+function speak(letter) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(letter);
+  u.lang='en-US'; u.rate=0.85; u.pitch=1.1;
+  window.speechSynthesis.speak(u);
+}
+
+/* ── Build 12 letter nodes on clock ── */
+function buildLetterNodes() {
+  const shuffled = [...ALL_LETTERS].sort(()=>Math.random()-.5);
+  slotLetters = shuffled.slice(0, SLOTS);
+
+  const g = document.getElementById('lettersGroup');
+  g.innerHTML = '';
+
+  slotLetters.forEach((letter, i) => {
+    // Angle from 12-o'clock, clockwise, in degrees
+    const degFromTop = i * (360 / SLOTS);
+    // Convert to standard math angle (0=right, CCW positive) for cos/sin
+    const rad = (degFromTop - 90) * Math.PI / 180;
+    const x = CX + R * Math.cos(rad);
+    const y = CY + R * Math.sin(rad);
+
+    const node = document.createElementNS('http://www.w3.org/2000/svg','g');
+    node.setAttribute('class','lnode');
+    node.setAttribute('id','n-'+i);
+    // Store the exact rotation angle needed to point hand here
+    node.dataset.slotAngle = degFromTop;
+
+    const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circ.setAttribute('cx', x.toFixed(2));
+    circ.setAttribute('cy', y.toFixed(2));
+    circ.setAttribute('r',  LR);
+    circ.setAttribute('fill','#FFE066');
+    circ.setAttribute('stroke','#F0C000');
+    circ.setAttribute('stroke-width','2');
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', x.toFixed(2));
+    txt.setAttribute('y', y.toFixed(2));
+    txt.setAttribute('font-size','20');
+    txt.setAttribute('fill','#222');
+    txt.textContent = letter;
+
+    node.appendChild(circ);
+    node.appendChild(txt);
+    g.appendChild(node);
+  });
+}
+
+/* ── Spin ── */
+function spinClock() {
+  if (spinning) return;
+  spinning = true; answered = false;
+
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('choices').style.display = 'none';
+  document.querySelectorAll('.lnode').forEach(n=>n.classList.remove('active'));
+
+  // 1. Choose target slot randomly
+  const targetSlot  = Math.floor(Math.random() * SLOTS);
+  currentLetter     = slotLetters[targetSlot];
+
+  // 2. The exact angle (0-360) we need the hand to point at
+  const targetAngle = targetSlot * (360 / SLOTS);  // e.g. slot 3 → 90°
+
+  // 3. Current hand position within 0-360
+  const nowMod = ((cumAngle % 360) + 360) % 360;
+
+  // 4. Forward-only delta to reach targetAngle
+  let delta = targetAngle - nowMod;
+  if (delta <= 0) delta += 360;      // always spin forward
+  if (delta < 15) delta += 360;     // avoid nearly-zero moves
+
+  // 5. Add random full extra spins (2–5) for visual variety
+  const extraSpins = (Math.floor(Math.random()*4)+2) * 360;
+
+  // 6. New cumulative angle — hand ends EXACTLY at targetAngle
+  cumAngle += extraSpins + delta;
+
+  // 7. Animate
+  const dur = (1.8 + Math.random()*1.4).toFixed(2);
+  const hg  = document.getElementById('handGroup');
+  hg.style.transition = `transform ${dur}s cubic-bezier(0.33,1,0.68,1)`;
+  hg.style.transform  = `rotate(${cumAngle}deg)`;
+
+  document.getElementById('questionBox').innerHTML =
+    '<p style="color:#888">العقرب بيتحرك... 🔄</p>';
+
+  setTimeout(() => {
+    // Highlight the letter the hand is now pointing at
+    document.querySelectorAll('.lnode').forEach(n=>n.classList.remove('active'));
+    document.getElementById('n-'+targetSlot)?.classList.add('active');
+
+    speak(currentLetter);
+
+    document.getElementById('questionBox').innerHTML =
+      `<p>العقرب وقف على <span class="big-letter">${currentLetter}</span></p>`;
+
+    showChoices();
+    spinning = false;
+  }, dur*1000 + 150);
+}
+
+/* ── Choices ── */
+function showChoices() {
+  const wrongs = slotLetters.filter(l=>l!==currentLetter);
+  shuffle(wrongs);
+  const opts = [currentLetter, wrongs[0], wrongs[1], wrongs[2]];
+  shuffle(opts);
+
+  const box = document.getElementById('choices');
+  box.style.display = 'grid';
+  box.innerHTML = '';
+  opts.forEach(l => {
+    const b = document.createElement('button');
+    b.className   = 'choice-btn';
+    b.textContent = l;
+    b.onclick = () => checkAnswer(b, l);
+    box.appendChild(b);
+  });
+}
+
+/* ── Check Answer ── */
+function checkAnswer(btn, sel) {
+  if (answered) return;
+  answered = true; round++;
+
+  const all = document.querySelectorAll('.choice-btn');
+  all.forEach(b=>b.disabled=true);
+
+  if (sel === currentLetter) {
+    correctCount++;
+    btn.classList.add('ok');
+    showToast(true);
+    confetti();
+  } else {
+    wrongCount++;
+    btn.classList.add('no');
+    all.forEach(b=>{ if(b.textContent===currentLetter) b.classList.add('ok'); });
+    showToast(false);
+  }
+
+  document.getElementById('sc').textContent = correctCount;
+  document.getElementById('sw').textContent = wrongCount;
+  document.getElementById('st').textContent = round;
+
+  setTimeout(() => {
+    hideToast();
+    if (round >= TOTAL) {
+      setTimeout(showWin, 350);
+    } else {
+      buildLetterNodes();   // fresh set of letters
+      document.getElementById('spinBtn').disabled = false;
+      document.getElementById('choices').style.display = 'none';
+      document.getElementById('questionBox').innerHTML =
+        '<p>اضغط لتحريك العقرب مرة تانية! 👆</p>';
+    }
+  }, 1500);
+}
+
+/* ── Toast ── */
+function showToast(ok) {
+  document.getElementById('tIcon').textContent = ok ? '🌟' : '💪';
+  const m = document.getElementById('tMsg');
+  m.textContent = ok ? 'صح! أحسنت!' : 'حاول تاني!';
+  m.className   = 'toast-msg '+(ok?'ok':'no');
+  document.getElementById('toast').classList.add('show');
+}
+function hideToast() { document.getElementById('toast').classList.remove('show'); }
+
+/* ── Win ── */
+function showWin() {
+  document.getElementById('gameArea').style.display='none';
+  document.getElementById('winScreen').classList.add('show');
+  const pct = Math.round(correctCount/TOTAL*100);
+  document.getElementById('winSub').textContent =
+    `إجابات صح: ${correctCount} من ${TOTAL} (${pct}%)`;
+  document.getElementById('winStars').textContent =
+    pct>=80?'⭐⭐⭐':pct>=50?'⭐⭐':'⭐';
+  confetti(50);
+}
+
+/* ── Restart ── */
+function restartGame() {
+  correctCount=wrongCount=round=0; cumAngle=0;
+  ['sc','sw','st'].forEach(id=>document.getElementById(id).textContent=0);
+  document.getElementById('winScreen').classList.remove('show');
+  document.getElementById('gameArea').style.display='flex';
+  document.getElementById('choices').style.display='none';
+  document.getElementById('spinBtn').disabled=false;
+  document.getElementById('questionBox').innerHTML='<p>اضغط على الزر لتحريك العقرب! 👆</p>';
+  const hg=document.getElementById('handGroup');
+  hg.style.transition='none';
+  hg.style.transform='rotate(0deg)';
+  buildLetterNodes();
+}
+
+/* ── Helpers ── */
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+}
+function confetti(n=22){
+  const cols=['#E05A00','#4ECDC4','#FFE066','#27ae60','#e74c3c','#9b59b6'];
+  for(let i=0;i<n;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div');
+      el.className='cfp';
+      el.style.left=Math.random()*100+'vw';
+      el.style.top='-12px';
+      el.style.background=cols[Math.floor(Math.random()*cols.length)];
+      el.style.animationDuration=(.7+Math.random()*.9)+'s';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),1400);
+    },i*35);
+  }
+}
+
+/* ── Init ── */
+buildLetterNodes();
+</script>
+</body>
+</html>

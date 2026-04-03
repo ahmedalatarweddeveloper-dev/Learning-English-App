@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مغامرة الحروف السحرية</title>
+    <style>
+        :root {
+            --box-color: #FF5722;
+            --success-color: #2ecc71;
+            --bg-color: #eef2f3;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .main-title { color: #2c3e50; font-size: 1.8rem; margin: 15px 0; }
+        .instruction { background: #fff; padding: 10px 20px; border-radius: 30px; margin-bottom: 20px; color: #555; font-weight: bold; }
+
+        #gameGrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .box-container { height: 110px; perspective: 1000px; }
+        
+        .box-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        /* حالة الفتح */
+        .box-inner.is-flipped { transform: rotateY(180deg); }
+
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .front {
+            background: linear-gradient(45deg, #FF5722, #FF9800);
+            color: white;
+            border: 3px solid #fff;
+        }
+        .front::after { content: "🎁"; }
+
+        .back {
+            background-color: white;
+            color: var(--success-color);
+            transform: rotateY(180deg);
+            border: 4px solid var(--success-color);
+        }
+
+        #reward { font-size: 2.5rem; height: 50px; visibility: hidden; margin-bottom: 10px; }
+        .btn-reset { margin-top: 25px; padding: 12px 40px; font-size: 1.1rem; background-color: #3498db; color: white; border: none; border-radius: 50px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">🌟 مغامرة الحروف السحرية 🌟</h1>
+    <div class="instruction">اضغط على صندوق واحد لاكتشاف الحرف!</div>
+
+    <div id="reward">🍬🍭✨</div>
+    <div id="gameGrid"></div>
+    <button class="btn-reset" id="resetBtn">ابدأ تحدي جديد</button>
+
+    <script>
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        let currentOpenedBox = null; // متغير لتخزين الصندوق المفتوح حالياً
+
+        function setupGame() {
+            const grid = document.getElementById('gameGrid');
+            const rewardDiv = document.getElementById('reward');
+            grid.innerHTML = '';
+            rewardDiv.style.visibility = 'hidden';
+            currentOpenedBox = null; // إعادة تصغير المتغير عند البدء من جديد
+
+            let shuffled = [...alphabet].sort(() => 0.5 - Math.random());
+            let currentLetters = shuffled.slice(0, 6);
+
+            currentLetters.forEach((char) => {
+                const container = document.createElement('div');
+                container.className = 'box-container';
+
+                const inner = document.createElement('div');
+                inner.className = 'box-inner';
+                inner.innerHTML = `
+                    <div class="face front"></div>
+                    <div class="face back">${char}</div>
+                `;
+
+                inner.addEventListener('click', function() {
+                    // إذا كان الصندوق المفتوح حالياً هو نفس اللي ضغطنا عليه.. نوقفه
+                    if (this === currentOpenedBox) return;
+
+                    // 1. قفل أي صندوق مفتوح آخر قبل فتح الجديد
+                    if (currentOpenedBox) {
+                        currentOpenedBox.classList.remove('is-flipped');
+                    }
+
+                    // 2. فتح الصندوق الحالي
+                    this.classList.add('is-flipped');
+                    currentOpenedBox = this; // تحديث الصندوق المفتوح حالياً
+
+                    // 3. نطق الحرف (الخاصية رجعت تانى)
+                    speak(char);
+
+                    // 4. إظهار المعزز
+                    rewardDiv.style.visibility = 'visible';
+                    setTimeout(() => { rewardDiv.style.visibility = 'hidden'; }, 1000);
+                });
+
+                container.appendChild(inner);
+                grid.appendChild(container);
+            });
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                // إلغاء أي نطق شغال عشان ميبقاش فيه تداخل
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupGame();
+            document.getElementById('resetBtn').addEventListener('click', setupGame);
+        });
+    </script>
+</body>
+</html>

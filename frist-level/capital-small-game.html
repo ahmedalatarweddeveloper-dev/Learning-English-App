@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة مطابقة الحروف الذكية</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --bg: #f7f9fc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .title { color: #2c3e50; font-size: 1.6rem; margin-bottom: 10px; text-align: center; }
+        
+        #big-letter {
+            font-size: 8rem;
+            color: var(--primary);
+            background: white;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            border: 5px solid #fff;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            width: 85px;
+            height: 85px;
+            font-size: 2.8rem;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .correct { background-color: var(--success) !important; color: white !important; border-color: #27ae60 !important; }
+        .wrong { background-color: var(--danger) !important; color: white !important; border-color: #c0392b !important; animation: shake 0.5s; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .next-btn {
+            margin-top: 40px;
+            padding: 15px 45px;
+            font-size: 1.2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="title">🌟 طابق الحرف الكبير بالصغير 🌟</h1>
+    
+    <div id="big-letter">?</div>
+
+    <div class="options-container" id="options"></div>
+
+    <button class="next-btn" id="nextBtn">حرف جديد 🔁</button>
+
+    <script>
+        const letters = [
+            { cap: 'A', small: 'a' }, { cap: 'B', small: 'b' }, { cap: 'C', small: 'c' },
+            { cap: 'D', small: 'd' }, { cap: 'E', small: 'e' }, { cap: 'F', small: 'f' },
+            { cap: 'G', small: 'g' }, { cap: 'H', small: 'h' }, { cap: 'I', small: 'i' },
+            { cap: 'J', small: 'j' }, { cap: 'K', small: 'k' }, { cap: 'L', small: 'l' }
+        ];
+
+        let currentPair = {};
+
+        function initGame() {
+            const optionsDiv = document.getElementById('options');
+            const bigLetterDiv = document.getElementById('big-letter');
+            optionsDiv.innerHTML = '';
+
+            // اختيار حرف عشوائي
+            currentPair = letters[Math.floor(Math.random() * letters.length)];
+            bigLetterDiv.innerText = currentPair.cap;
+            
+            // نطق الحرف الإنجليزي (ضروري للتعلم)
+            speak(currentPair.cap);
+
+            // تجهيز 3 خيارات
+            let choices = [currentPair.small];
+            while (choices.length < 3) {
+                let randomSmall = letters[Math.floor(Math.random() * letters.length)].small;
+                if (!choices.includes(randomSmall)) choices.push(randomSmall);
+            }
+            choices.sort(() => 0.5 - Math.random());
+
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = choice;
+                btn.onclick = () => checkAnswer(btn, choice);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(btn, choice) {
+            if (choice === currentPair.small) {
+                btn.classList.add('correct');
+                // نطق الحرف الصغير
+                speak(choice);
+                // رسالة التنبيه المطلوبة
+                setTimeout(() => {
+                    alert("ممتاز! 🌟");
+                    initGame(); // الانتقال التلقائي لحرف جديد بعد النجاح
+                }, 200);
+            } else {
+                btn.classList.add('wrong');
+                // رسالة التنبيه المطلوبة
+                setTimeout(() => {
+                    alert("أعد المحاولة 🔄");
+                    btn.classList.remove('wrong');
+                }, 200);
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        document.getElementById('nextBtn').addEventListener('click', initGame);
+        window.onload = initGame;
+    </script>
+</body>
+</html>

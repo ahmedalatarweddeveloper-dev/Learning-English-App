@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Alphabet Adventure</title>
+    <style>
+        /* منع السكرول نهائياً وتوسيط المحتوى */
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: #87CEEB; 
+            /* تم تغيير الخط ليكون بسيطاً وواضحاً للأطفال */
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .sun { position: absolute; top: 10px; right: 10px; font-size: 50px; z-index: 1; }
+        .cloud { position: absolute; top: 40px; left: 20px; font-size: 35px; opacity: 0.8; z-index: 1; }
+
+        h1 {
+            color: white; text-shadow: 2px 2px #ff4757;
+            margin: 0 0 10px 0; font-size: 1.8rem; z-index: 2;
+        }
+
+        .wheel-box {
+            position: relative;
+            width: 85vw; max-width: 380px; 
+            aspect-ratio: 1/1;
+            z-index: 2;
+        }
+
+        .pointer {
+            position: absolute; top: -15px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px; z-index: 10;
+        }
+
+        canvas {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 8px solid white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
+            background: white;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex; gap: 10px; z-index: 2;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 18px; font-weight: bold;
+            border: none; border-radius: 20px;
+            cursor: pointer; transition: 0.2s;
+            color: white; box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        #spinBtn { background: #ff4757; }
+        #repeatBtn { background: #1e90ff; display: none; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        /* تكبير وتوضيح حرف النتيجة */
+        .res-content h1 { 
+            font-size: 180px; 
+            color: #ff4757; 
+            margin: 0; 
+            font-family: Arial, sans-serif; 
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sun">☀️</div>
+    <div class="cloud">☁️</div>
+
+    <h1>يلا نلعب! ✨</h1>
+
+    <div class="wheel-box">
+        <div class="pointer">👇</div>
+        <canvas id="wheel" width="600" height="600"></canvas>
+    </div>
+
+    <div class="controls">
+        <button id="spinBtn" onclick="spin()">لف الدولاب 🎡</button>
+        <button id="repeatBtn" onclick="speak()">اسمع تاني 🔊</button>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="res-content" style="text-align: center;">
+            <h1 id="resLetter">A</h1>
+            <button onclick="closeRes()" style="background:#2ecc71; margin-top:20px;">استمرار 🌟</button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    
+   const alphabet = [
+        {l:"A", c:"#FF6B6B"}, {l:"B", c:"#1DD1A1"}, {l:"C", c:"#48DBFB"}, {l:"D", c:"#FECA57"},
+        {l:"E", c:"#FF9FF3"}, {l:"F", c:"#54A0FF"}, {l:"G", c:"#FF9F43"}, {l:"H", c:"#A29BFE"},
+        {l:"I", c:"#0ABDE3"}, {l:"J", c:"#10AC84"}, {l:"K", c:"#5F27CD"}, {l:"L", c:"#FF6B6B"},
+        {l:"M", c:"#1DD1A1"}, {l:"N", c:"#48DBFB"}, {l:"O", c:"#FECA57"}, {l:"P", c:"#FF9FF3"},
+        {l:"Q", c:"#54A0FF"}, {l:"R", c:"#FF9F43"}, {l:"S", c:"#A29BFE"}, {l:"T", c:"#0ABDE3"},
+        {l:"U", c:"#10AC84"}, {l:"V", c:"#5F27CD"}, {l:"W", c:"#FF6B6B"}, {l:"X", c:"#1DD1A1"},
+        {l:"Y", c:"#48DBFB"}, {l:"Z", c:"#FECA57"}
+    ];
+
+    const arc = (2 * Math.PI) / alphabet.length;
+    let rotation = 0;
+    let selected = null;
+
+    function draw() {
+        alphabet.forEach((item, i) => {
+            const angle = i * arc;
+            ctx.fillStyle = item.c;
+            ctx.beginPath();
+            ctx.moveTo(300, 300);
+            ctx.arc(300, 300, 290, angle, angle + arc);
+            ctx.fill();
+            ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+
+            ctx.save();
+            ctx.translate(300, 300);
+            ctx.rotate(angle + arc / 2);
+            ctx.fillStyle = "white";
+            // تم تحديد خط Arial ليكون الحرف واضحاً جداً
+            ctx.font = "bold 28px Arial"; 
+            ctx.textAlign = "right";
+            ctx.fillText(item.l, 275, 10);
+            ctx.restore();
+        });
+    }
+
+    function spin() {
+        const extra = Math.floor(Math.random() * 360) + 3600;
+        rotation += extra;
+        canvas.style.transform = `rotate(${rotation}deg)`;
+        document.getElementById('spinBtn').disabled = true;
+
+        setTimeout(() => {
+            const deg = rotation % 360;
+            const index = Math.floor((360 - deg + 270) % 360 / (360 / alphabet.length));
+            selected = alphabet[index];
+            showRes();
+        }, 4000);
+    }
+
+    function showRes() {
+        document.getElementById('resLetter').innerText = selected.l;
+        document.getElementById('overlay').style.display = 'flex';
+        speak();
+    }
+
+    function closeRes() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('spinBtn').disabled = false;
+        document.getElementById('repeatBtn').style.display = 'block';
+    }
+
+    function speak() {
+        const m = new SpeechSynthesisUtterance(selected.l);
+        m.lang = 'en-US'; m.rate = 0.8;
+        window.speechSynthesis.speak(m);
+    }
+
+    draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>سلة الصور - مستوى التحدي</title>
+    <style>
+        :root {
+            --team1: #ff5722;
+            --team2: #2196f3;
+            --bg: #f8f9fa;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            margin: 0;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 10px;
+        }
+
+        .score-box {
+            padding: 10px 20px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .score-p1 { background: var(--team1); }
+        .score-p2 { background: var(--team2); }
+        .score-num { font-size: 2rem; font-weight: bold; display: block; }
+
+        /* منطقة الهدف - نص فقط */
+        .target-area {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            margin: 10px 0 20px 0;
+            border: 5px solid #4caf50; /* لون أخضر للتحفيز */
+            width: 85%;
+            max-width: 300px;
+        }
+
+        .target-word { 
+            font-size: 2.8rem; 
+            font-weight: bold; 
+            color: #2e7d32; 
+            letter-spacing: 1px;
+        }
+
+        .instruction-small {
+            display: block;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .basket {
+            background: #fff;
+            border-radius: 20px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            border: 3px solid #ddd;
+            min-height: 220px;
+        }
+
+        .item {
+            background: #f9f9f9;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            height: 80px;
+            border: 1px solid #eee;
+        }
+
+        .btn-reset {
+            margin-top: 20px;
+            padding: 10px 25px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scoreboard">
+        <div class="score-box score-p1">
+            <span>فريق 1</span>
+            <span id="score1" class="score-num">0</span>
+        </div>
+        <div class="score-box score-p2">
+            <span>فريق 2</span>
+            <span id="score2" class="score-num">0</span>
+        </div>
+    </div>
+
+    <div class="target-area">
+        <span id="targetTxt" class="target-word">---</span>
+        <span class="instruction-small">اقرأ الكلمة واستخرج صورتها من السلة</span>
+    </div>
+
+    <div class="game-grid">
+        <div class="basket" id="basket1" style="border-color: var(--team1)"></div>
+        <div class="basket" id="basket2" style="border-color: var(--team2)"></div>
+    </div>
+
+    <button class="btn-reset" onclick="resetScores()">تصفير النقاط 🗑️</button>
+
+    <script>
+        const library = [
+            { word: 'Apple', img: '🍎' }, { word: 'Cat', img: '🐱' }, { word: 'Dog', img: '🐶' }, { word: 'Car', img: '🚗' },
+            { word: 'Boy', img: '👦' }, { word: 'Fish', img: '🐟' }, { word: 'Tree', img: '🌳' }, { word: 'Book', img: '📖' },
+            { word: 'Ball', img: '⚽' }, { word: 'House', img: '🏠' }, { word: 'Sun', img: '☀️' }, { word: 'Moon', img: '🌙' },
+            { word: 'Bird', img: '🐦' }, { word: 'Milk', img: '🥛' }, { word: 'Egg', img: '🥚' }, { word: 'Cake', img: '🍰' },
+            { word: 'Hand', img: '✋' }, { word: 'Eye', img: '👁️' }, { word: 'Foot', img: '🦶' }, { word: 'Nose', img: '👃' },
+            { word: 'Lion', img: '🦁' }, { word: 'Monkey', img: '🐒' }, { word: 'Rabbit', img: '🐰' }, { word: 'Bear', img: '🐻' },
+            { word: 'Banana', img: '🍌' }, { word: 'Orange', img: '🍊' }, { word: 'Grapes', img: '🍇' }, { word: 'Corn', img: '🌽' },
+            { word: 'Plane', img: '✈️' }, { word: 'Bike', img: '🚲' }, { word: 'Bus', img: '🚌' }, { word: 'Ship', img: '🚢' },
+            { word: 'Bed', img: '🛏️' }, { word: 'Chair', img: '🪑' }, { word: 'Door', img: '🚪' }, { word: 'Key', img: '🔑' },
+            { word: 'Pen', img: '🖊️' }, { word: 'Star', img: '⭐' }, { word: 'Flower', img: '🌸' }, { word: 'Water', img: '💧' }
+        ];
+
+        let currentTarget = {};
+        let scores = { p1: 0, p2: 0 };
+
+        function initGame() {
+            const b1 = document.getElementById('basket1');
+            const b2 = document.getElementById('basket2');
+            b1.innerHTML = ''; b2.innerHTML = '';
+
+            // اختيار الهدف
+            currentTarget = library[Math.floor(Math.random() * library.length)];
+            document.getElementById('targetTxt').innerHTML = currentTarget.word;
+            
+            // نطق السؤال فقط (الكلمة المطلوبة)
+            speak(currentTarget.word);
+
+            fillBasket(b1, 'p1');
+            fillBasket(b2, 'p2');
+        }
+
+        function fillBasket(el, player) {
+            let options = [currentTarget];
+            while(options.length < 4) {
+                let rand = library[Math.floor(Math.random() * library.length)];
+                if(!options.find(o => o.word === rand.word)) options.push(rand);
+            }
+            options.sort(() => 0.5 - Math.random());
+
+            options.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = item.img;
+                div.onclick = () => check(item.word, player);
+                el.appendChild(div);
+            });
+        }
+
+        function check(selected, player) {
+            if (selected === currentTarget.word) {
+                scores[player]++;
+                document.getElementById('score' + player.at(-1)).innerText = scores[player];
+                alert("إجابة صحيحة! فريق " + (player === 'p1' ? "1" : "2") + " ربح الجولة 🌟");
+                initGame();
+            } else {
+                alert("خطأ! انظر للكلمة جيداً وابحث عن صورتها 🔄");
+            }
+        }
+
+        function resetScores() {
+            scores = { p1: 0, p2: 0 };
+            document.getElementById('score1').innerText = 0;
+            document.getElementById('score2').innerText = 0;
+            initGame();
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                msg.rate = 0.8;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

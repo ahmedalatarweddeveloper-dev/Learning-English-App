@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مغامرة مطابقة الحروف</title>
+    <style>
+        :root {
+            --bg: #e0f2f1;
+            --primary: #00796b;
+            --accent: #ff9800;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .main-title { color: #004d40; font-size: 1.6rem; margin: 10px 0; }
+        .instruction { color: #555; margin-bottom: 20px; font-weight: bold; }
+
+        /* شبكة اللعبة - 3 أعمدة في 4 صفوف */
+        .memory-game {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .memory-card {
+            height: 110px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .memory-card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #00796b, #009688);
+            color: white;
+            border: 3px solid #fff;
+        }
+        .card-back::after { content: "❓"; }
+
+        .card-front {
+            background-color: white;
+            color: var(--primary);
+            transform: rotateY(180deg);
+            border: 4px solid var(--primary);
+        }
+
+        .matched .card-front {
+            background-color: #c8e6c9;
+            border-color: #2e7d32;
+            color: #2e7d32;
+        }
+
+        .btn-reset {
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">🧩 مغامرة مطابقة الحروف</h1>
+    <p class="instruction">طابق الحرف الكبير (CAPITAL) بالصغير (small)</p>
+
+    <div class="memory-game" id="gameGrid"></div>
+
+    <button class="btn-reset" onclick="initGame()">لعبة جديدة حروف مختلفة 🔁</button>
+
+    <script>
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+
+        function initGame() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+
+            // 1. اختيار 6 حروف عشوائية تماماً من الألفباء
+            let randomLetters = [...alphabet]
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 6);
+
+            // 2. إنشاء الأزواج (Capital و Small)
+            let deck = [];
+            randomLetters.forEach(char => {
+                deck.push({ val: char, match: char.toLowerCase(), id: char + '_cap' });
+                deck.push({ val: char.toLowerCase(), match: char, id: char + '_small' });
+            });
+
+            // 3. خلط الكروت
+            deck.sort(() => 0.5 - Math.random());
+
+            // 4. بناء الكروت في الـ HTML
+            deck.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.val = item.val;
+                card.dataset.match = item.match;
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-face card-back"></div>
+                        <div class="card-face card-front">${item.val}</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', flipCard);
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (lockBoard || this === firstCard) return;
+
+            this.classList.add('flipped');
+            speak(this.dataset.val);
+
+            if (!firstCard) {
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            checkMatch();
+        }
+
+        function checkMatch() {
+            let isMatch = firstCard.dataset.val.toLowerCase() === secondCard.dataset.val.toLowerCase();
+
+            if (isMatch) {
+                firstCard.classList.add('matched');
+                secondCard.classList.add('matched');
+                setTimeout(() => alert("ممتاز! استمر يا بطل 🌟"), 400);
+                resetTurn();
+            } else {
+                lockBoard = true;
+                setTimeout(() => {
+                    alert("أعد المحاولة 🔄");
+                    firstCard.classList.remove('flipped');
+                    secondCard.classList.remove('flipped');
+                    resetTurn();
+                }, 800);
+            }
+        }
+
+        function resetTurn() {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

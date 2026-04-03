@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>استخرج الكلمة الصحيحة</title>
+    <style>
+        :root {
+            --primary: #fb8c00;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --bg: #fffde7;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .main-title { color: #e65100; font-size: 1.5rem; margin: 10px 0; }
+
+        /* كارت الصورة */
+        .image-card {
+            background: white;
+            width: 160px;
+            height: 160px;
+            border-radius: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 7rem;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            margin: 15px 0;
+            border: 5px solid white;
+        }
+
+        .instruction { font-weight: bold; color: #555; margin-bottom: 15px; }
+
+        /* شبكة الكلمات (6 خيارات) */
+        .words-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .word-item {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px solid #ffe082;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #444;
+            text-align: center;
+            cursor: pointer;
+            height: 55px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .word-item:active { transform: scale(0.95); background: #fff8e1; }
+
+        .btn-next {
+            margin-top: 30px;
+            padding: 12px 40px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">🔎 استخرج الكلمة الصحيحة</h1>
+    
+    <div class="image-card" id="mainImg">🍎</div>
+    <p class="instruction">ما اسم هذه الصورة؟</p>
+
+    <div class="words-grid" id="optionsGrid"></div>
+
+    <button class="btn-next" onclick="initGame()">صورة جديدة 🔁</button>
+
+    <script>
+        const unifiedLibrary = [
+            { word: 'Apple', img: '🍎' }, { word: 'Cat', img: '🐱' }, { word: 'Dog', img: '🐶' }, { word: 'Car', img: '🚗' },
+            { word: 'Boy', img: '👦' }, { word: 'Fish', img: '🐟' }, { word: 'Tree', img: '🌳' }, { word: 'Book', img: '📖' },
+            { word: 'Ball', img: '⚽' }, { word: 'House', img: '🏠' }, { word: 'Sun', img: '☀️' }, { word: 'Moon', img: '🌙' },
+            { word: 'Bird', img: '🐦' }, { word: 'Milk', img: '🥛' }, { word: 'Egg', img: '🥚' }, { word: 'Cake', img: '🍰' },
+            { word: 'Hand', img: '✋' }, { word: 'Eye', img: '👁️' }, { word: 'Foot', img: '🦶' }, { word: 'Nose', img: '👃' },
+            { word: 'Lion', img: '🦁' }, { word: 'Monkey', img: '🐒' }, { word: 'Rabbit', img: '🐰' }, { word: 'Bear', img: '🐻' },
+            { word: 'Banana', img: '🍌' }, { word: 'Orange', img: '🍊' }, { word: 'Grapes', img: '🍇' }, { word: 'Corn', img: '🌽' },
+            { word: 'Plane', img: '✈️' }, { word: 'Bike', img: '🚲' }, { word: 'Bus', img: '🚌' }, { word: 'Ship', img: '🚢' },
+            { word: 'Bed', img: '🛏️' }, { word: 'Chair', img: '🪑' }, { word: 'Door', img: '🚪' }, { word: 'Key', img: '🔑' },
+            { word: 'Pen', img: '🖊️' }, { word: 'Star', img: '⭐' }, { word: 'Flower', img: '🌸' }, { word: 'Water', img: '💧' }
+        ];
+
+        let currentCorrect = "";
+
+        function initGame() {
+            const imgBox = document.getElementById('mainImg');
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+
+            // 1. اختيار العنصر الصحيح
+            let item = unifiedLibrary[Math.floor(Math.random() * unifiedLibrary.length)];
+            currentCorrect = item.word;
+            imgBox.innerHTML = item.img;
+
+            // نطق الكلمة (السؤال) لمساعدة التلميذ
+            speak(currentCorrect);
+
+            // 2. تجهيز 6 خيارات
+            let choices = [currentCorrect];
+            while(choices.length < 6) {
+                let rand = unifiedLibrary[Math.floor(Math.random() * unifiedLibrary.length)].word;
+                if(!choices.includes(rand)) choices.push(rand);
+            }
+            choices.sort(() => 0.5 - Math.random());
+
+            // 3. إنشاء الأزرار
+            choices.forEach(word => {
+                const btn = document.createElement('div');
+                btn.className = 'word-item';
+                btn.innerText = word;
+                btn.onclick = () => {
+                    if(word === currentCorrect) {
+                        alert("إجابة صحيحة! برافو 🌟");
+                        initGame();
+                    } else {
+                        alert("خطأ! ركز في حروف الكلمة 🔄");
+                    }
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                msg.rate = 0.8;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
