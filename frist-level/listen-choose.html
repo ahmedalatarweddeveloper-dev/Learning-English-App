@@ -161,6 +161,8 @@
         document.getElementById('playAudio').addEventListener('click', () => {
             speak(correctLetter);
         });
+         // اضف هذا السطر في أول الدالة التي تشغل الصوت
+        window.speechSynthesis.getVoices(); 
 
         window.onload = initGame;
     </script>
