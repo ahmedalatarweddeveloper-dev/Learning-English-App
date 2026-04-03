@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>لعبة صورة وكلمة - الـ 40 كلمة الموحدة</title>
+    <style>
+        :root {
+            --primary: #e91e63;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --bg: #fdf2f5;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .main-title { color: #880e4f; font-size: 1.6rem; margin: 10px 0; text-align: center; }
+
+        /* حاوية الصورة */
+        .image-card {
+            background: white;
+            width: 180px;
+            height: 180px;
+            border-radius: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 7rem;
+            box-shadow: 0 10px 25px rgba(233, 30, 99, 0.15);
+            margin: 20px 0;
+            border: 6px solid white;
+        }
+
+        .instruction { color: #555; font-weight: bold; margin-bottom: 20px; font-size: 1.1rem; }
+
+        /* أزرار الكلمات */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .word-option {
+            background: white;
+            padding: 16px;
+            border-radius: 50px;
+            border: 3px solid #fce4ec;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #444;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .correct { background-color: var(--success) !important; color: white !important; border-color: #27ae60 !important; }
+        .wrong { background-color: var(--danger) !important; color: white !important; border-color: #c0392b !important; }
+
+        .btn-next {
+            margin-top: 25px;
+            padding: 12px 45px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(233, 30, 99, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">🖼️ انظر للصورة واختار الكلمة</h1>
+    
+    <div class="image-card" id="displayImg">❓</div>
+    <p class="instruction">ما اسم هذا الشيء؟</p>
+
+    <div class="options-container" id="optionsBox"></div>
+
+    <button class="btn-next" onclick="initGame()">صورة جديدة 🔁</button>
+
+    <script>
+        // مصفوفة الـ 40 كلمة الموحدة لكل الألعاب
+        const unifiedLibrary = [
+            { word: 'Apple', img: '🍎' }, { word: 'Cat', img: '🐱' }, { word: 'Dog', img: '🐶' }, { word: 'Car', img: '🚗' },
+            { word: 'Boy', img: '👦' }, { word: 'Fish', img: '🐟' }, { word: 'Tree', img: '🌳' }, { word: 'Book', img: '📖' },
+            { word: 'Ball', img: '⚽' }, { word: 'House', img: '🏠' }, { word: 'Sun', img: '☀️' }, { word: 'Moon', img: '🌙' },
+            { word: 'Bird', img: '🐦' }, { word: 'Milk', img: '🥛' }, { word: 'Egg', img: '🥚' }, { word: 'Cake', img: '🍰' },
+            { word: 'Hand', img: '✋' }, { word: 'Eye', img: '👁️' }, { word: 'Foot', img: '🦶' }, { word: 'Nose', img: '👃' },
+            { word: 'Lion', img: '🦁' }, { word: 'Monkey', img: '🐒' }, { word: 'Rabbit', img: '🐰' }, { word: 'Bear', img: '🐻' },
+            { word: 'Banana', img: '🍌' }, { word: 'Orange', img: '🍊' }, { word: 'Grapes', img: '🍇' }, { word: 'Corn', img: '🌽' },
+            { word: 'Plane', img: '✈️' }, { word: 'Bike', img: '🚲' }, { word: 'Bus', img: '🚌' }, { word: 'Ship', img: '🚢' },
+            { word: 'Bed', img: '🛏️' }, { word: 'Chair', img: '🪑' }, { word: 'Door', img: '🚪' }, { word: 'Key', img: '🔑' },
+            { word: 'Pen', img: '🖊️' }, { word: 'Star', img: '⭐' }, { word: 'Flower', img: '🌸' }, { word: 'Water', img: '💧' }
+        ];
+
+        let currentItem = {};
+
+        function initGame() {
+            const displayImg = document.getElementById('displayImg');
+            const optionsBox = document.getElementById('optionsBox');
+            optionsBox.innerHTML = '';
+
+            // 1. اختيار عنصر عشوائي
+            currentItem = unifiedLibrary[Math.floor(Math.random() * unifiedLibrary.length)];
+            displayImg.innerHTML = currentItem.img;
+
+            // 2. تجهيز 3 خيارات
+            let choices = [currentItem.word];
+            while(choices.length < 3) {
+                let randWord = unifiedLibrary[Math.floor(Math.random() * unifiedLibrary.length)].word;
+                if(!choices.includes(randWord)) choices.push(randWord);
+            }
+            choices.sort(() => 0.5 - Math.random());
+
+            // 3. بناء الأزرار
+            choices.forEach(word => {
+                const btn = document.createElement('div');
+                btn.className = 'word-option';
+                btn.innerText = word;
+                btn.onclick = () => check(btn, word);
+                optionsBox.appendChild(btn);
+            });
+        }
+
+        function check(element, selected) {
+            if (selected === currentItem.word) {
+                element.classList.add('correct');
+                speak(selected);
+                setTimeout(() => {
+                    alert("ممتاز! 🌟");
+                    initGame();
+                }, 300);
+            } else {
+                element.classList.add('wrong');
+                alert("أعد المحاولة 🔄");
+                element.classList.remove('wrong');
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                msg.rate = 0.8;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>لعبة المس الكلمة - 40 كلمة موحدة</title>
+    <style>
+        :root {
+            --primary: #673ab7;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --bg: #f0f4f8;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .main-title { color: #311b92; font-size: 1.5rem; margin: 10px 0; text-align: center; }
+        
+        /* منطقة السماعة */
+        .audio-section {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .audio-btn {
+            background: #ede7f6;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: 5px solid white;
+            font-size: 3.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .audio-btn:active { transform: scale(0.9); }
+
+        .hint-text { margin-top: 10px; color: #666; font-size: 0.9rem; font-weight: bold; }
+
+        /* أزرار الكلمات */
+        .words-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .word-option {
+            background: white;
+            padding: 18px;
+            border-radius: 15px;
+            border: 3px solid #dee2e6;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #444;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        /* حالات الإجابة */
+        .correct { background-color: var(--success) !important; color: white !important; border-color: #27ae60 !important; }
+        .wrong { background-color: var(--danger) !important; color: white !important; border-color: #c0392b !important; }
+
+        .btn-refresh {
+            margin-top: 25px;
+            padding: 12px 35px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(103, 58, 183, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">🎧 اسمع الكلمة واختارها</h1>
+    
+    <div class="audio-section">
+        <div class="audio-btn" onclick="replay()">🔊</div>
+        <div class="hint-text">دوس على السماعة عشان تسمع ثاني</div>
+    </div>
+
+    <div class="words-container" id="optionsBox"></div>
+
+    <button class="btn-refresh" onclick="initGame()">كلمة جديدة 🔁</button>
+
+    <script>
+        // مصفوفة الـ 40 كلمة الموحدة (نفس اللي في لعبة ساعي البريد)
+        const unifiedWords = [
+            'Apple', 'Cat', 'Dog', 'Car', 'Boy', 'Fish', 'Tree', 'Book', 'Ball', 'House',
+            'Sun', 'Moon', 'Bird', 'Milk', 'Egg', 'Cake', 'Hand', 'Eye', 'Foot', 'Nose',
+            'Lion', 'Monkey', 'Rabbit', 'Bear', 'Banana', 'Orange', 'Grapes', 'Corn',
+            'Plane', 'Bike', 'Bus', 'Ship', 'Bed', 'Chair', 'Door', 'Key', 'Pen', 'Star',
+            'Flower', 'Water'
+        ];
+
+        let targetWord = "";
+
+        function initGame() {
+            const container = document.getElementById('optionsBox');
+            container.innerHTML = '';
+
+            // 1. اختيار الكلمة المستهدفة
+            targetWord = unifiedWords[Math.floor(Math.random() * unifiedWords.length)];
+            
+            // نطق الكلمة عند البداية
+            setTimeout(replay, 500);
+
+            // 2. تجهيز 3 خيارات (الصح + 2 غلط من نفس القائمة)
+            let choices = [targetWord];
+            while(choices.length < 3) {
+                let randomWord = unifiedWords[Math.floor(Math.random() * unifiedWords.length)];
+                if(!choices.includes(randomWord)) choices.push(randomWord);
+            }
+            // خلط الخيارات
+            choices.sort(() => 0.5 - Math.random());
+
+            // 3. إنشاء الأزرار
+            choices.forEach(word => {
+                const btn = document.createElement('div');
+                btn.className = 'word-option';
+                btn.innerText = word;
+                btn.onclick = () => check(btn, word);
+                container.appendChild(btn);
+            });
+        }
+
+        function check(element, selected) {
+            if (selected === targetWord) {
+                element.classList.add('correct');
+                speak(selected); // تأكيد النطق عند الصح
+                setTimeout(() => {
+                    alert("ممتاز! إجابة صحيحة 🌟");
+                    initGame();
+                }, 300);
+            } else {
+                element.classList.add('wrong');
+                alert("أعد المحاولة 🔄");
+                element.classList.remove('wrong');
+            }
+        }
+
+        function replay() {
+            speak(targetWord);
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                msg.rate = 0.8; // سرعة هادئة
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

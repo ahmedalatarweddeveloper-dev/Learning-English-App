@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ساعي البريد - نسخة المسافات الواسعة</title>
+    <style>
+        :root {
+            --primary: #2980b9;
+            --success: #27ae60;
+            --bg: #f0f3f5;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            margin: 0;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .main-title { color: #2c3e50; font-size: 1.5rem; margin: 15px 0; }
+
+        #game-area {
+            position: relative;
+            width: 95%;
+            max-width: 600px; /* كبرنا العرض شوية عشان المسافات */
+            height: 500px;
+            background: #fff;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #ddd;
+        }
+
+        /* الجواب */
+        .envelope {
+            width: 110px;
+            height: 70px;
+            background: #f1c40f;
+            border: 3px solid #f39c12;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            position: absolute;
+            top: 40px;
+            left: calc(50% - 55px);
+            z-index: 100;
+            cursor: move;
+            touch-action: none;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* حاوية البيوت بمسافات كبيرة */
+        .houses-container {
+            display: flex;
+            justify-content: space-between; /* توزيع متباعد جداً */
+            width: 90%;
+            margin: auto auto 30px auto;
+            padding: 0 10px;
+        }
+
+        .house {
+            width: 90px;
+            height: 120px;
+            border: 3px dashed #bbb;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            background: #fafafa;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        /* التنبيه البصري عند الاقتراب */
+        .house.highlight {
+            border-color: var(--primary);
+            background: #e1f5fe;
+            transform: scale(1.15);
+            border-style: solid;
+            box-shadow: 0 0 15px rgba(41, 128, 185, 0.4);
+        }
+
+        .btn-new {
+            margin-top: 20px;
+            padding: 15px 45px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">📬 ساعي البريد الشاطر</h1>
+
+    <div id="game-area">
+        <div id="envelope" class="envelope"></div>
+        <div class="houses-container" id="housesGrid"></div>
+    </div>
+
+    <button class="btn-new" onclick="initGame()">كلمة جديدة 🔁</button>
+
+    <script>
+        // بنك الكلمات الـ 40 (نفس الكلمات السابقة)
+        const gameData = [
+            { word: 'Apple', img: '🍎' }, { word: 'Cat', img: '🐱' }, { word: 'Dog', img: '🐶' }, { word: 'Car', img: '🚗' },
+            { word: 'Boy', img: '👦' }, { word: 'Fish', img: '🐟' }, { word: 'Tree', img: '🌳' }, { word: 'Book', img: '📖' },
+            { word: 'Ball', img: '⚽' }, { word: 'House', img: '🏠' }, { word: 'Sun', img: '☀️' }, { word: 'Moon', img: '🌙' },
+            { word: 'Bird', img: '🐦' }, { word: 'Milk', img: '🥛' }, { word: 'Egg', img: '🥚' }, { word: 'Cake', img: '🍰' },
+            { word: 'Hand', img: '✋' }, { word: 'Eye', img: '👁️' }, { word: 'Foot', img: '🦶' }, { word: 'Nose', img: '👃' },
+            { word: 'Lion', img: '🦁' }, { word: 'Monkey', img: '🐒' }, { word: 'Rabbit', img: '🐰' }, { word: 'Bear', img: '🐻' },
+            { word: 'Banana', img: '🍌' }, { word: 'Orange', img: '🍊' }, { word: 'Grapes', img: '🍇' }, { word: 'Corn', img: '🌽' },
+            { word: 'Plane', img: '✈️' }, { word: 'Bike', img: '🚲' }, { word: 'Bus', img: '🚌' }, { word: 'Ship', img: '🚢' },
+            { word: 'Bed', img: '🛏️' }, { word: 'Chair', img: '🪑' }, { word: 'Door', img: '🚪' }, { word: 'Key', img: '🔑' },
+            { word: 'Pen', img: '🖊️' }, { word: 'Star', img: '⭐' }, { word: 'Flower', img: '🌸' }, { word: 'Water', img: '💧' }
+        ];
+
+        let currentItem = {};
+        const envelope = document.getElementById('envelope');
+        const housesGrid = document.getElementById('housesGrid');
+        let isDragging = false;
+        let startPos = { x: 0, y: 0 };
+
+        function initGame() {
+            envelope.style.top = '40px';
+            envelope.style.left = 'calc(50% - 55px)';
+            
+            currentItem = gameData[Math.floor(Math.random() * gameData.length)];
+            envelope.innerText = currentItem.word;
+            speak(currentItem.word);
+
+            let choices = [currentItem];
+            while(choices.length < 3) {
+                let rand = gameData[Math.floor(Math.random() * gameData.length)];
+                if(!choices.find(c => c.word === rand.word)) choices.push(rand);
+            }
+            choices.sort(() => 0.5 - Math.random());
+
+            housesGrid.innerHTML = '';
+            choices.forEach(choice => {
+                const house = document.createElement('div');
+                house.className = 'house';
+                house.innerHTML = choice.img;
+                house.dataset.word = choice.word;
+                housesGrid.appendChild(house);
+            });
+        }
+
+        envelope.onpointerdown = (e) => {
+            isDragging = true;
+            startPos = { x: e.clientX - envelope.offsetLeft, y: e.clientY - envelope.offsetTop };
+            envelope.setPointerCapture(e.pointerId);
+        };
+
+        envelope.onpointermove = (e) => {
+            if (!isDragging) return;
+            envelope.style.left = (e.clientX - startPos.x) + 'px';
+            envelope.style.top = (e.clientY - startPos.y) + 'px';
+            checkCollision();
+        };
+
+        envelope.onpointerup = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const targetHouse = checkCollision();
+            if (targetHouse) {
+                if (targetHouse.dataset.word === currentItem.word) {
+                    alert("ممتاز! 🌟");
+                    initGame();
+                } else {
+                    alert("أعد المحاولة 🔄");
+                    envelope.style.top = '40px';
+                    envelope.style.left = 'calc(50% - 55px)';
+                }
+            }
+        };
+
+        function checkCollision() {
+            const envRect = envelope.getBoundingClientRect();
+            // مركز الجواب (عشان الحساسية تكون في نقطة واحدة مش المساحة كلها)
+            const centerX = envRect.left + envRect.width / 2;
+            const centerY = envRect.top + envRect.height / 2;
+
+            let hit = null;
+            document.querySelectorAll('.house').forEach(house => {
+                const rect = house.getBoundingClientRect();
+                // الكود دلوقت بيفحص لو "نقطة سنتر الجواب" دخلت جوه حدود البيت
+                if (centerX > rect.left && centerX < rect.right && 
+                    centerY > rect.top && centerY < rect.bottom) {
+                    house.classList.add('highlight');
+                    hit = house;
+                } else {
+                    house.classList.remove('highlight');
+                }
+            });
+            return hit;
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'en-US';
+                msg.rate = 0.8;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
